@@ -31,7 +31,7 @@ func generateId(arr []person) int {
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
-	var selector string
+	var selector, password string
 	dataBase := []person{}
 
 	for selector != "end" {
@@ -93,7 +93,7 @@ func main() {
 				}
 			}
 		} else if selector == "3" {
-			var password string
+
 			tries := 0
 
 			for password != "badpassword123" {
@@ -161,7 +161,7 @@ func main() {
 						}
 					}
 				}
-				fmt.Println(dataBase)
+
 				selector = "3"
 				selector3 = "0"
 
