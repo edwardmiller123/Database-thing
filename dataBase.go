@@ -14,11 +14,11 @@ type person struct {
 }
 
 func generateId(arr []person) int {
-	Id := rand.Intn(5)
+	Id := rand.Intn(100000)
 	for m := 0; m < len(arr); m++ {
 
 		if arr[m].idNumber == Id {
-			Id += 1
+			Id += 5
 			generateId(arr)
 		} else {
 
