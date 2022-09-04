@@ -20,7 +20,7 @@ func checkId(arr []person) int {
 		if arr[m].idNumber == Id {
 			checkId(arr)
 		} else {
-			break
+
 		}
 
 	}
