@@ -131,12 +131,18 @@ func main() {
 				var idToChange int
 				var propertyToChange, newValue string
 
-				fmt.Println("Enter Id number of entry, the property to be modifed and the new value of that property:")
-				fmt.Scan(&idToChange, &propertyToChange, newValue)
+				fmt.Println("Enter Id number of entry to be modified:")
+				fmt.Scan(&idToChange)
 
 				for n := 0; n < len(dataBase); n++ {
 
 					if dataBase[n].idNumber == idToChange {
+
+						fmt.Println("Enter property to be modified:")
+						fmt.Scan(&propertyToChange)
+
+						fmt.Println("Enter new value:")
+						fmt.Scan(&newValue)
 
 						if propertyToChange == "name" {
 							dataBase[n].name = newValue
@@ -149,6 +155,7 @@ func main() {
 								panic(err)
 							}
 							dataBase[n].age = newValueInt
+
 						} else if propertyToChange == "favourite animal" {
 							dataBase[n].favAnimal = newValue
 						}
@@ -156,6 +163,7 @@ func main() {
 				}
 				fmt.Println(dataBase)
 				selector = "3"
+				selector3 = "0"
 
 			}
 
