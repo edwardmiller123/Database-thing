@@ -13,12 +13,13 @@ type person struct {
 	idNumber  int
 }
 
-func checkId(arr []person) int {
-	Id := rand.Intn(100)
-	for m := 1; m < len(arr); m++ {
+func generateId(arr []person) int {
+	Id := rand.Intn(5)
+	for m := 0; m < len(arr); m++ {
 
 		if arr[m].idNumber == Id {
-			checkId(arr)
+			Id += 1
+			generateId(arr)
 		} else {
 
 		}
@@ -33,7 +34,7 @@ func main() {
 	dataBase := []person{}
 	for selector != "end" {
 		for selector != "1" && selector != "2" && selector != "3" && selector != "end" {
-			fmt.Printf("Press 1 to register new person.\nPress 2 to look up existing Person\nPress 3 to edit existing entry")
+			fmt.Printf("Press 1 to register new person.\nPress 2 to look up existing Person\nPress 3 to edit existing entry.\n")
 			fmt.Scan(&selector)
 		}
 		if selector == "1" {
@@ -44,7 +45,7 @@ func main() {
 			fmt.Scan(&newPerson.age)
 			fmt.Scan(&newPerson.favAnimal)
 
-			newPerson.idNumber = checkId(dataBase)
+			newPerson.idNumber = generateId(dataBase)
 
 			dataBase = append(dataBase, newPerson)
 
@@ -86,7 +87,8 @@ func main() {
 				}
 			}
 		} else if selector == "3" {
-
+			fmt.Println(dataBase)
+			selector = "0"
 		}
 
 	}
