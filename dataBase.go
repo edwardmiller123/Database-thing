@@ -56,6 +56,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	col := bucket.Scope("_default").Collection("_default")
+
 	rand.Seed(time.Now().UnixNano())
 	var selector, password2 string
 	dataBase := []person{}
@@ -81,6 +83,19 @@ func main() {
 			newPerson.IdNumber = generateId(dataBase)
 
 			dataBase = append(dataBase, newPerson)
+			Id64 := int64(newPerson.IdNumber)
+			IdString := strconv.FormatInt(Id64, 32)
+			//Update couchbase
+			_, err = col.Upsert(IdString,
+				person{
+					Name:      newPerson.Name,
+					Age:       newPerson.Age,
+					FavAnimal: newPerson.FavAnimal,
+					IdNumber:  newPerson.IdNumber,
+				}, nil)
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			fmt.Println("Person added.")
 			selector = "0"
