@@ -2,23 +2,26 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/couchbase/gocb/v2"
 )
 
 type person struct {
-	name      string
-	age       int
-	favAnimal string
-	idNumber  int
+	Name      string `json:"Name"`
+	Age       int    `json:"Age"`
+	FavAnimal string `'json:"FavAnimal"`
+	IdNumber  int    `json:"IdNumber"`
 }
 
 func generateId(arr []person) int {
 	Id := rand.Intn(100000)
 	for m := 0; m < len(arr); m++ {
 
-		if arr[m].idNumber == Id {
+		if arr[m].IdNumber == Id {
 			Id += 5
 			generateId(arr)
 		} else {
@@ -30,9 +33,36 @@ func generateId(arr []person) int {
 }
 
 func main() {
+
+	fmt.Println("Database starting...")
+	// connect to couchbase
+	bucketName := "People"
+	username := "Administrator"
+	password := "password"
+
+	cluster, err := gocb.Connect("couchbase://localhost", gocb.ClusterOptions{
+		Authenticator: gocb.PasswordAuthenticator{
+			Username: username,
+			Password: password,
+		},
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bucket := cluster.Bucket(bucketName)
+	err = bucket.WaitUntilReady(5*time.Second, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	rand.Seed(time.Now().UnixNano())
-	var selector, password string
+	var selector, password2 string
 	dataBase := []person{}
+
+	time.Sleep(time.Second)
+
+	defer fmt.Println("Data base shutting down.")
 
 	for selector != "end" {
 
@@ -40,22 +70,22 @@ func main() {
 			fmt.Printf("Press 1 to register new person.\nPress 2 to look up existing Person\nPress 3 for admin options.\n")
 			fmt.Scan(&selector)
 		}
-		if selector == "1" {
+		if selector == "1" { // register new person
 			var newPerson person
 			fmt.Println("Enter name, age and favourite animal")
 
-			fmt.Scan(&newPerson.name)
-			fmt.Scan(&newPerson.age)
-			fmt.Scan(&newPerson.favAnimal)
+			fmt.Scan(&newPerson.Name)
+			fmt.Scan(&newPerson.Age)
+			fmt.Scan(&newPerson.FavAnimal)
 
-			newPerson.idNumber = generateId(dataBase)
+			newPerson.IdNumber = generateId(dataBase)
 
 			dataBase = append(dataBase, newPerson)
 
 			fmt.Println("Person added.")
 			selector = "0"
 
-		} else if selector == "2" {
+		} else if selector == "2" { //search for existing
 			var selector2 string
 
 			for selector2 != "1" && selector2 != "2" && selector2 != "end" {
@@ -73,7 +103,7 @@ func main() {
 
 				for i := 0; i < len(dataBase); i++ {
 
-					if dataBase[i].name == search || dataBase[i].favAnimal == search {
+					if dataBase[i].Name == search || dataBase[i].FavAnimal == search {
 						fmt.Println(dataBase[i])
 					}
 				}
@@ -87,18 +117,18 @@ func main() {
 
 				for j := 0; j < len(dataBase); j++ {
 
-					if dataBase[j].age == searchAge {
+					if dataBase[j].Age == searchAge {
 						fmt.Println(dataBase[j])
 					}
 				}
 			}
-		} else if selector == "3" {
+		} else if selector == "3" { //login
 
 			tries := 0
 
-			for password != "badpassword123" {
+			for password2 != "badpassword123" {
 				fmt.Printf("Enter password: ")
-				fmt.Scan(&password)
+				fmt.Scan(&password2)
 
 				if tries == 2 {
 					fmt.Println("One attempt remaining!")
@@ -110,7 +140,7 @@ func main() {
 			}
 			var selector3 string
 
-			if password != "badpassword123" {
+			if password2 != "badpassword123" {
 				selector = "0"
 				selector3 = "return"
 			}
@@ -127,7 +157,7 @@ func main() {
 			} else if selector3 == "return" {
 				selector = "0"
 
-			} else if selector3 == "1" {
+			} else if selector3 == "1" { // edit entry
 				var idToChange int
 				var propertyToChange, newValue string
 
@@ -136,28 +166,30 @@ func main() {
 
 				for n := 0; n < len(dataBase); n++ {
 
-					if dataBase[n].idNumber == idToChange {
+					if dataBase[n].IdNumber == idToChange {
 
 						fmt.Println("Enter property to be modified:")
+						//This doesnt work for multiple words e.g "favourite animal"
+						//Fix this!
 						fmt.Scan(&propertyToChange)
 
 						fmt.Println("Enter new value:")
 						fmt.Scan(&newValue)
 
 						if propertyToChange == "name" {
-							dataBase[n].name = newValue
+							dataBase[n].Name = newValue
 
 						} else if propertyToChange == "age" {
 							newValueInt, err := strconv.Atoi(newValue)
 
 							if err != nil {
-								// ... handle error
 								panic(err)
 							}
-							dataBase[n].age = newValueInt
+
+							dataBase[n].Age = newValueInt
 
 						} else if propertyToChange == "favourite animal" {
-							dataBase[n].favAnimal = newValue
+							dataBase[n].FavAnimal = newValue
 						}
 					}
 				}
