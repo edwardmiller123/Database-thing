@@ -24,8 +24,6 @@ func generateId(arr []person) int {
 		if arr[m].IdNumber == Id {
 			Id += 5
 			generateId(arr)
-		} else {
-
 		}
 
 	}
@@ -34,7 +32,7 @@ func generateId(arr []person) int {
 
 func main() {
 
-	fmt.Println("Database starting...")
+	fmt.Println("Database Active")
 	// connect to couchbase
 	bucketName := "People"
 	username := "Administrator"
@@ -83,10 +81,9 @@ func main() {
 			newPerson.IdNumber = generateId(dataBase)
 
 			dataBase = append(dataBase, newPerson)
-			Id64 := int64(newPerson.IdNumber)
-			IdString := strconv.FormatInt(Id64, 32)
+
 			//Update couchbase
-			_, err = col.Upsert(IdString,
+			_, err = col.Upsert(fmt.Sprintf("%d", newPerson.IdNumber),
 				person{
 					Name:      newPerson.Name,
 					Age:       newPerson.Age,
@@ -122,6 +119,7 @@ func main() {
 						fmt.Println(dataBase[i])
 					}
 				}
+
 				selector2 = "0"
 				selector = "0"
 
@@ -175,6 +173,7 @@ func main() {
 			} else if selector3 == "1" { // edit entry
 				var idToChange int
 				var propertyToChange, newValue string
+				var updatePerson person
 
 				fmt.Println("Enter Id number of entry to be modified:")
 				fmt.Scan(&idToChange)
@@ -182,6 +181,8 @@ func main() {
 				for n := 0; n < len(dataBase); n++ {
 
 					if dataBase[n].IdNumber == idToChange {
+
+						updatePerson = dataBase[n]
 
 						fmt.Println("Enter property to be modified:")
 						//This doesnt work for multiple words e.g "favourite animal"
@@ -193,6 +194,7 @@ func main() {
 
 						if propertyToChange == "name" {
 							dataBase[n].Name = newValue
+							updatePerson.Name = newValue
 
 						} else if propertyToChange == "age" {
 							newValueInt, err := strconv.Atoi(newValue)
@@ -202,9 +204,21 @@ func main() {
 							}
 
 							dataBase[n].Age = newValueInt
+							updatePerson.Age = newValueInt
 
 						} else if propertyToChange == "favourite animal" {
 							dataBase[n].FavAnimal = newValue
+							updatePerson.FavAnimal = newValue
+						}
+						_, err = col.Upsert(fmt.Sprintf("%d", updatePerson.IdNumber),
+							person{
+								Name:      updatePerson.Name,
+								Age:       updatePerson.Age,
+								FavAnimal: updatePerson.FavAnimal,
+								IdNumber:  updatePerson.IdNumber,
+							}, nil)
+						if err != nil {
+							log.Fatal(err)
 						}
 					}
 				}
