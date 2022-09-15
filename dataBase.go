@@ -32,7 +32,6 @@ func generateId(arr []person) int {
 
 func main() {
 
-	fmt.Println("Database Active")
 	// connect to couchbase
 	bucketName := "People"
 	username := "Administrator"
@@ -58,7 +57,25 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 	var selector, password2 string
-	dataBase := []person{}
+	var dataBase []person
+
+	queryResult, err := cluster.Query(fmt.Sprintf("select Name, Age, FavAnimal, IdNumber from `%s`._default._default", bucketName), &gocb.QueryOptions{})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//Appends query to local variable
+	for queryResult.Next() {
+		var result person
+		err := queryResult.Row(&result)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dataBase = append(dataBase, result)
+	}
+
+	fmt.Println("Database Active")
 
 	time.Sleep(time.Second)
 
