@@ -13,8 +13,13 @@ import (
 type person struct {
 	Name      string `json:"Name"`
 	Age       int    `json:"Age"`
-	FavAnimal string `'json:"FavAnimal"`
+	FavAnimal string `'json:"FavouriteAnimal"`
 	IdNumber  int    `json:"IdNumber"`
+}
+
+type loginCredentials struct {
+	UserName     string `json:"UserName"`
+	UserPassword string `json:"UserPassword"`
 }
 
 func generateId(arr []person) int {
@@ -58,22 +63,41 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	var selector, password2 string
 	var dataBase []person
+	var admins []loginCredentials
 
-	queryResult, err := cluster.Query(fmt.Sprintf("select Name, Age, FavAnimal, IdNumber from `%s`._default._default", bucketName), &gocb.QueryOptions{})
+	queryResult1, err := cluster.Query(fmt.Sprintf("select Name, Age, FavAnimal, IdNumber from `%s`._default._default", bucketName), &gocb.QueryOptions{})
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//Appends query to local variable
-	for queryResult.Next() {
+	queryResult2, err := cluster.Query(fmt.Sprintf("select UserName, UserPassword from `%s`._default.loginCredentials", bucketName), &gocb.QueryOptions{})
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//Appends people to local variable
+	for queryResult1.Next() {
 		var result person
-		err := queryResult.Row(&result)
+		err := queryResult1.Row(&result)
 		if err != nil {
 			log.Fatal(err)
 		}
 		dataBase = append(dataBase, result)
 	}
+
+	//Appends admins to local variable
+	for queryResult2.Next() {
+		var result2 loginCredentials
+		err := queryResult2.Row(&result2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		admins = append(admins, result2)
+	}
+
+	fmt.Println(admins)
 
 	fmt.Printf("Database Active\n \n")
 
@@ -93,6 +117,8 @@ func main() {
 
 			fmt.Scan(&newPerson.Name)
 			fmt.Scan(&newPerson.Age)
+			//doesnt work for multiple words
+			//fix this
 			fmt.Scan(&newPerson.FavAnimal)
 
 			newPerson.IdNumber = generateId(dataBase)
@@ -153,29 +179,42 @@ func main() {
 				}
 			}
 		} else if selector == "3" { //login
-
+			var userCheck, selector3 string
 			tries := 0
 
-			for password2 != "badpassword123" {
-				fmt.Printf("Enter password: ")
-				fmt.Scan(&password2)
+			fmt.Println("Enter user Name:")
+			fmt.Scan(&userCheck)
 
-				if tries == 2 {
-					fmt.Println("One attempt remaining!")
-				} else if tries == 3 {
-					break
+			for p := 0; p < len(admins); p++ {
+
+				if userCheck == admins[p].UserName {
+
+					for password2 != admins[p].UserPassword {
+						fmt.Printf("Enter password: ")
+						fmt.Scan(&password2)
+
+						if tries == 2 {
+							fmt.Println("One attempt remaining!")
+						} else if tries == 3 {
+							break
+						}
+
+						tries++
+					}
+
+					if password2 != admins[p].UserPassword {
+						selector = "0"
+						selector3 = "return"
+					}
+
+				} else {
+					selector = "0"
+					selector3 = "return"
 				}
-
-				tries++
-			}
-			var selector3 string
-
-			if password2 != "badpassword123" {
-				selector = "0"
-				selector3 = "return"
 			}
 
 			for selector3 != "1" && selector3 != "2" && selector3 != "return" && selector3 != "end" {
+				password2 = ""
 				fmt.Println(dataBase)
 				fmt.Printf("To edit existing entry, press 1.\nTo remove an entry, press 2.\nTo return, type \"return\".\n")
 				fmt.Scan(&selector3)
