@@ -65,6 +65,8 @@ func main() {
 	var dataBase []person
 	var admins []loginCredentials
 
+	skipLogin := false
+
 	queryResult1, err := cluster.Query(fmt.Sprintf("select Name, Age, FavAnimal, IdNumber from `%s`._default._default", bucketName), &gocb.QueryOptions{})
 
 	if err != nil {
@@ -96,8 +98,6 @@ func main() {
 		}
 		admins = append(admins, result2)
 	}
-
-	fmt.Println(admins)
 
 	fmt.Printf("Database Active\n \n")
 
@@ -177,6 +177,7 @@ func main() {
 						fmt.Println(dataBase[j])
 					}
 				}
+				selector2 = "0"
 			}
 		} else if selector == "3" { //login
 			var userCheck, selector3 string
@@ -202,7 +203,7 @@ func main() {
 						tries++
 					}
 
-					if password2 != admins[p].UserPassword {
+					if password2 != admins[p].UserPassword && !skipLogin {
 						selector = "0"
 						selector3 = "return"
 					}
@@ -215,6 +216,7 @@ func main() {
 
 			for selector3 != "1" && selector3 != "2" && selector3 != "return" && selector3 != "end" {
 				password2 = ""
+				skipLogin = false
 				fmt.Println(dataBase)
 				fmt.Printf("To edit existing entry, press 1.\nTo remove an entry, press 2.\nTo return, type \"return\".\n")
 				fmt.Scan(&selector3)
@@ -278,7 +280,7 @@ func main() {
 						}
 					}
 				}
-
+				skipLogin = true
 				selector = "3"
 				selector3 = "0"
 
@@ -297,6 +299,7 @@ func main() {
 
 				cluster.Query(fmt.Sprintf("Delete from `%s`._default._default use KEYS $1 ", bucketName), &gocb.QueryOptions{PositionalParameters: []interface{}{fmt.Sprintf("%d", idToDelete)}})
 				fmt.Printf("Entry %d has been removed\n \n", idToDelete)
+				skipLogin = true
 
 			}
 
