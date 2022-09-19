@@ -75,11 +75,11 @@ func main() {
 		dataBase = append(dataBase, result)
 	}
 
-	fmt.Println("Database Active")
-
-	time.Sleep(time.Second)
+	fmt.Printf("Database Active\n \n")
 
 	defer fmt.Println("Data base shutting down.")
+
+	fmt.Printf("Currently Registered: %d\n \n", len(dataBase))
 
 	for selector != "end" {
 
@@ -177,7 +177,7 @@ func main() {
 
 			for selector3 != "1" && selector3 != "2" && selector3 != "return" && selector3 != "end" {
 				fmt.Println(dataBase)
-				fmt.Printf("To edit existing entry, press 1.\nTo return, type \"return\".\n")
+				fmt.Printf("To edit existing entry, press 1.\nTo remove an entry, press 2.\nTo return, type \"return\".\n")
 				fmt.Scan(&selector3)
 
 			}
@@ -242,6 +242,22 @@ func main() {
 
 				selector = "3"
 				selector3 = "0"
+
+			} else if selector3 == "2" {
+				var idToDelete int
+				fmt.Println("Enter Id number of person to be removed: ")
+				fmt.Scan(&idToDelete)
+
+				for l := 0; l < len(dataBase); l++ {
+
+					if dataBase[l].IdNumber == idToDelete {
+						dataBase[l] = dataBase[len(dataBase)-1]
+						dataBase = dataBase[:len(dataBase)-1]
+					}
+				}
+
+				cluster.Query(fmt.Sprintf("Delete from `%s`._default._default use KEYS $1 ", bucketName), &gocb.QueryOptions{PositionalParameters: []interface{}{fmt.Sprintf("%d", idToDelete)}})
+				fmt.Printf("Entry %d has been removed\n \n", idToDelete)
 
 			}
 
