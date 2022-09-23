@@ -59,13 +59,12 @@ func main() {
 	}
 
 	col := bucket.Scope("_default").Collection("_default")
+	col2 := bucket.Scope("_default").Collection("loginCredentials")
 
 	rand.Seed(time.Now().UnixNano())
 	var selector, password2 string
 	var dataBase []person
 	var admins []loginCredentials
-
-	skipLogin := false
 
 	queryResult1, err := cluster.Query(fmt.Sprintf("select Name, Age, FavAnimal, IdNumber from `%s`._default._default", bucketName), &gocb.QueryOptions{})
 
@@ -203,10 +202,15 @@ func main() {
 						tries++
 					}
 
-					if password2 != admins[p].UserPassword && !skipLogin {
+					if password2 != admins[p].UserPassword {
 						selector = "0"
 						selector3 = "return"
 					}
+
+					selector = "3"
+					selector3 = "0"
+
+					break
 
 				} else {
 					selector = "0"
@@ -214,11 +218,10 @@ func main() {
 				}
 			}
 
-			for selector3 != "1" && selector3 != "2" && selector3 != "return" && selector3 != "end" {
+			for selector3 != "1" && selector3 != "2" && selector3 != "3" && selector3 != "return" && selector3 != "end" {
 				password2 = ""
-				skipLogin = false
-				fmt.Println(dataBase)
-				fmt.Printf("To edit existing entry, press 1.\nTo remove an entry, press 2.\nTo return, type \"return\".\n")
+				fmt.Println(dataBase, " ")
+				fmt.Printf("To edit existing entry, press 1.\nTo remove an entry, press 2.\nTo register admin/change password, press 3.\nTo return, type \"return\".\n")
 				fmt.Scan(&selector3)
 
 			}
@@ -280,7 +283,7 @@ func main() {
 						}
 					}
 				}
-				skipLogin = true
+
 				selector = "3"
 				selector3 = "0"
 
@@ -299,7 +302,32 @@ func main() {
 
 				cluster.Query(fmt.Sprintf("Delete from `%s`._default._default use KEYS $1 ", bucketName), &gocb.QueryOptions{PositionalParameters: []interface{}{fmt.Sprintf("%d", idToDelete)}})
 				fmt.Printf("Entry %d has been removed\n \n", idToDelete)
-				skipLogin = true
+
+			} else if selector3 == "3" {
+				var newAdmin loginCredentials
+				var newUserName, newPassword string
+
+				fmt.Println("Choose new username:")
+				fmt.Scan(&newUserName)
+				fmt.Println("Choose a password:")
+				fmt.Scan(&newPassword)
+
+				newAdmin.UserName = newUserName
+				newAdmin.UserPassword = newPassword
+
+				admins = append(admins, newAdmin)
+
+				_, err = col2.Upsert(newAdmin.UserName,
+					loginCredentials{
+						UserName:     newAdmin.UserName,
+						UserPassword: newAdmin.UserPassword,
+					}, nil)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				selector = "3"
+				selector3 = "0"
 
 			}
 
