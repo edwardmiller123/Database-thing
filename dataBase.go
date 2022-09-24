@@ -62,9 +62,11 @@ func main() {
 	col2 := bucket.Scope("_default").Collection("loginCredentials")
 
 	rand.Seed(time.Now().UnixNano())
+
 	var selector, password2 string
 	var dataBase []person
 	var admins []loginCredentials
+	var skipLogin bool
 
 	queryResult1, err := cluster.Query(fmt.Sprintf("select Name, Age, FavAnimal, IdNumber from `%s`._default._default", bucketName), &gocb.QueryOptions{})
 
@@ -102,12 +104,12 @@ func main() {
 
 	defer fmt.Println("Data base shutting down.")
 
-	fmt.Printf("Currently Registered: %d\n \n", len(dataBase))
+	fmt.Printf("Currently Registered: %d\n--------------------------\nNumber of Admins: %d\n--------------------------\n", len(dataBase), len(admins))
 
 	for selector != "end" {
 
 		for selector != "1" && selector != "2" && selector != "3" && selector != "end" {
-			fmt.Printf("Press 1 to register new person.\nPress 2 to look up existing Person\nPress 3 for admin options.\n")
+			fmt.Printf("\nPress 1 to register new person.\n//\nPress 2 to look up existing Person\n//\nPress 3 for admin options.\n--------------------------\n")
 			fmt.Scan(&selector)
 		}
 		if selector == "1" { // register new person
@@ -182,12 +184,14 @@ func main() {
 			var userCheck, selector3 string
 			tries := 0
 
-			fmt.Println("Enter user Name:")
-			fmt.Scan(&userCheck)
+			if !skipLogin {
+				fmt.Println("Enter user Name:")
+				fmt.Scan(&userCheck)
+			}
 
 			for p := 0; p < len(admins); p++ {
 
-				if userCheck == admins[p].UserName {
+				if userCheck == admins[p].UserName && !skipLogin {
 
 					for password2 != admins[p].UserPassword {
 						fmt.Printf("Enter password: ")
@@ -212,16 +216,18 @@ func main() {
 
 					break
 
-				} else {
+				} else if !skipLogin {
 					selector = "0"
 					selector3 = "return"
 				}
 			}
 
 			for selector3 != "1" && selector3 != "2" && selector3 != "3" && selector3 != "return" && selector3 != "end" {
-				password2 = ""
+				//password2 = ""
+				fmt.Println(" ")
 				fmt.Println(dataBase, " ")
-				fmt.Printf("To edit existing entry, press 1.\nTo remove an entry, press 2.\nTo register admin/change password, press 3.\nTo return, type \"return\".\n")
+				fmt.Println(" ")
+				fmt.Printf("--------------------------\nTo edit existing entry, press 1.\n//\nTo remove an entry, press 2.\n//\nTo register admin/change password, press 3.\n//\nTo return, type \"return\".\n--------------------------\n")
 				fmt.Scan(&selector3)
 
 			}
@@ -230,6 +236,7 @@ func main() {
 
 			} else if selector3 == "return" {
 				selector = "0"
+				skipLogin = false
 
 			} else if selector3 == "1" { // edit entry
 				var idToChange int
@@ -286,6 +293,7 @@ func main() {
 
 				selector = "3"
 				selector3 = "0"
+				skipLogin = true
 
 			} else if selector3 == "2" {
 				var idToDelete int
@@ -302,6 +310,8 @@ func main() {
 
 				cluster.Query(fmt.Sprintf("Delete from `%s`._default._default use KEYS $1 ", bucketName), &gocb.QueryOptions{PositionalParameters: []interface{}{fmt.Sprintf("%d", idToDelete)}})
 				fmt.Printf("Entry %d has been removed\n \n", idToDelete)
+
+				skipLogin = true
 
 			} else if selector3 == "3" {
 				var newAdmin loginCredentials
@@ -328,6 +338,7 @@ func main() {
 
 				selector = "3"
 				selector3 = "0"
+				skipLogin = true
 
 			}
 
